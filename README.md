@@ -75,7 +75,7 @@ volumes:
 ```
 
 If you do not use a specific onion address,
-the randomly generated hostname will be printed to the logs:
+the randomly generated address will be printed to the logs:
 
 ```shell
 $ docker logs tor-quick | grep "Hidden service address"
