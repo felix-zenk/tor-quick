@@ -1,0 +1,20 @@
+services:
+  # mkp224o:
+    # image: ghcr.io/cathugger/mkp224o
+  hello:
+    image: crccheck/hello-world
+    container_name: web-test
+    ports:
+      - 8000:8000
+  tor-quick:
+    image: tor-quick
+    container_name: tor-quick
+    environment:
+      FORWARD_ADDR: web-test:8000
+
+      ## Uncomment if you want to use another public port for the onion service
+      # PUBLIC_PORT: 80
+
+    ## If you want to use a set onion address, you can mount a volume with the private_key and hostname files
+    # volumes:
+      # - ./hidden_service:/var/lib/tor/hidden_service
