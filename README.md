@@ -2,7 +2,7 @@ TOR-quick
 ===
 
 `tor-quick` is a simple docker container
-that sets up a hidden service and forwards traffic to a specified address.
+that sets up a hidden service and forwards HTTP traffic to a specified address.
 
 A minimal compose stack could look like this:
 
@@ -15,7 +15,7 @@ services:
         FORWARD_ADDR: 127.0.0.1:80
 ```
 
-This will create a hidden service that forwards traffic to the localhost.
+This will create a hidden service that forwards HTTP traffic to the localhost.
 You can also combine `tor-quick` with a webserver, that should be accessible as a hidden service,
 in the compose stack:
 
