@@ -10,11 +10,11 @@ if ! env | grep -qE '^FORWARD_ADDR\d*='; then
 fi
 
 mkdir -p "${HIDDEN_SERVICE_DIR}" "${DATA_DIR}" "${LOG_DIR}"
-chown "${USER:-$(whoami)}": "${DATA_DIR}" "${HIDDEN_SERVICE_DIR}"
-chmod -R 700 "${DATA_DIR}" "${HIDDEN_SERVICE_DIR}"
+chmod -R 700 "${HIDDEN_SERVICE_DIR}"
+chown -R tor:nogroup "${DATA_DIR}" "${LOG_DIR}/notices.log"
 
-services=""  # List of services to be displayed at the end
-usedports=""  # List of ports that are already in use
+HIDDEN_SERVICES=""  # List of services to be displayed at the end
+USED_PORTS=""  # List of ports that are already in use
 
 TORRC="Log notice file ${LOG_DIR}/notices.log
 DataDirectory ${DATA_DIR}
@@ -29,7 +29,7 @@ HiddenServiceDir ${HIDDEN_SERVICE_DIR}
 # Get all environment variables that match FORWARD_ADDR(+number)
 for varname in $(env | grep -E '^FORWARD_ADDR\d*=' | sed 's/=.*//'); do
   # Get the value of the environment variable
-  value="$(eval echo \$$varname)"
+  value="$(eval echo \$"$varname")"
 
   # If value matches the legacy format prepend 80: to the value
   if echo "$value" | grep -qE '^[[:alnum:].]+:\d+$'; then
@@ -46,13 +46,13 @@ Define a valid port number in the format PORT:FWD_ADDR or PORT:FWD_ADDR:FWD_PORT
   fi
 
   # Check if the port is already in use
-  for usedport in $usedports; do
+  for usedport in $USED_PORTS; do
     if [ "$PORT" = "$usedport" ]; then
       echo "Port $PORT was already defined in another environment variable! Can not be used in $varname"
       exit 1
     fi
   done
-  usedports="${usedports} $PORT"
+  USED_PORTS="${USED_PORTS} $PORT"
 
   # Parse the forward address and add the same port if only the listening port is defined
   FORWARD_ADDRESS=$(echo "$value" | cut -d: -f2-)
@@ -61,7 +61,7 @@ Define a valid port number in the format PORT:FWD_ADDR or PORT:FWD_ADDR:FWD_PORT
   fi
 
   # Add the service to the list to be displayed later
-  services="${services} ${PORT}~${FORWARD_ADDRESS}"
+  HIDDEN_SERVICES="${HIDDEN_SERVICES} ${PORT}~${FORWARD_ADDRESS}"
 
   # Add the service to the torrc configuration
   TORRC="${TORRC}HiddenServicePort $PORT $FORWARD_ADDRESS
@@ -70,31 +70,31 @@ done
 
 # Generate and check the torrc configuration
 echo "$TORRC" > /etc/tor/torrc
-if ! tor --verify-config > /dev/null 2>&1; then
+if ! su -s /bin/sh -c '/usr/bin/tor --verify-config > /dev/null 2>&1' tor; then
   echo "Invalid torrc configuration"
   exit 1
 fi
 
-# Start tor
-tor &
+# Start tor as a background process as the tor user
+su -s /bin/sh -c '/usr/bin/tor' tor &
 
 # Wait for the hidden service to be generated if it doesn't exist
 until [ -f "${HIDDEN_SERVICE_DIR}/hostname" ]; do
-  sleep 1
+  sleep .1
 done
 
-# Display the hidden service address and the services
-SERVICE_HOSTNAME="$(cat "${HIDDEN_SERVICE_DIR}/hostname")"
-echo "Hidden service address: $SERVICE_HOSTNAME"
-for service in $services; do
+# Display the onion service address and the hidden services
+ONION_SERVICE_ADDRESS="$(cat "${HIDDEN_SERVICE_DIR}/hostname")"
+echo "Onion Service address: $ONION_SERVICE_ADDRESS"
+for service in $HIDDEN_SERVICES; do
   PORT=$(echo "$service" | cut -d~ -f1)
-  FORWARD_ADDR=$(echo "$service" | cut -d~ -f2)
-  echo "Hidden service: $SERVICE_HOSTNAME:$PORT -> $FORWARD_ADDR"
+  FORWARD_ADDRESS=$(echo "$service" | cut -d~ -f2)
+  echo "Hidden service: $ONION_SERVICE_ADDRESS:$PORT -> $FORWARD_ADDRESS"
 done
 
 # Wait for the log file to be created
 until [ -f "${LOG_DIR}/notices.log" ]; do
-  sleep 1
+  sleep .1
 done
 
 # Display the logs
