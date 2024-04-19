@@ -1,8 +1,7 @@
 TOR-quick
 ===
 
-`tor-quick` is a simple docker container
-for setting up a hidden service and forwarding traffic to specified addresses.
+`tor-quick` is a docker container for setting up an onion service and forwarding traffic to specified addresses.
 
 A minimal compose stack could look like this:
 
@@ -15,8 +14,17 @@ services:
       FORWARD_ADDR: 80:127.0.0.1:8000
 ```
 
-This will create a hidden service that forwards traffic on the listening port 80 to 127.0.0.1:8000.
-You can also combine `tor-quick` with a server, that should be accessible as a hidden service,
+This will create an onion service that forwards traffic on the listening port 80 to 127.0.0.1:8000.  
+Have a look at [docker-compose.yaml](docker-compose.yaml) for a more complete example.  
+
+Additional environment variables can be set to configure the onion service further:
+
+- `CHECK_DESTINATION`: If set to `true`, the destination addresses will be checked for reachability before starting the onion service.
+  Helps to avoid misconfigurations.
+- `ENABLE_VANGUARDS`: If set to `true`, the [Vanguards](https://github.com/mikeperry-tor/vanguards) extension will be installed and enabled.
+- `TORRC_EXTRA`: Additional configuration to append to the `torrc` file.
+
+You can also combine `tor-quick` with a server, that should be accessible as an onion service,
 in the compose stack:
 
 ```yaml
@@ -34,7 +42,7 @@ services:
 ```
 
 To use a specific onion address instead of generating a random one,
-you can supply the hidden service directory (containing the hostname and key) as a volume:
+you can supply the onion service directory (containing the hostname and key) as a volume:
 
 ```yaml
 services:
@@ -72,7 +80,7 @@ volumes:
   hidden_service:
 ```
 
-The `.onion` address of your hidden service will be printed to the logs:
+The `.onion` address of your onion service will be printed to the logs:
 
 ```shell
 $ docker logs tor-quick | grep "Onion Service address"
@@ -96,6 +104,6 @@ services:
 To view the active forwards:
 
 ```shell
-$ docker logs tor-quick | grep "Hidden services"
+$ docker logs tor-quick | grep "Hidden service"
 ```
 

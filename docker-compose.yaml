@@ -8,9 +8,15 @@ services:
     image: ghcr.io/felix-zenk/tor-quick:latest
     container_name: tor-quick
     environment:
+      FORWARD_ADDR1: 80:web-server:8000
       ## Uncomment if the forward destinations should be tested to be reachable
       # CHECK_DESTINATION: true
-      FORWARD_ADDR1: 80:web-server:8000
+      ## Install and use vanguards (takes more time the first time the container is started)
+      # ENABLE_VANGUARDS: true
+      ## Any extra options to write to the torrc file
+      # TORRC_EXTRA: |
+        # HardwareAccel 1
+        # %include /volume/with/extra/*.conf
 
     ## You probably want to uncomment this when using CHECK_DESTINATION
     # depends_on:
