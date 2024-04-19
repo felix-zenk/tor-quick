@@ -9,10 +9,10 @@ A minimal compose stack could look like this:
 ```yaml
 services:
   tor-quick:
-      image: ghcr.io/felix-zenk/tor-quick:latest
-      container_name: tor-quick
-      environment:
-        FORWARD_ADDR: 80:127.0.0.1:8000
+    image: ghcr.io/felix-zenk/tor-quick:latest
+    container_name: tor-quick
+    environment:
+      FORWARD_ADDR: 80:127.0.0.1:8000
 ```
 
 This will create a hidden service that forwards traffic on the listening port 80 to 127.0.0.1:8000.
@@ -27,10 +27,10 @@ services:
     ports:
       - 8000:8000
   tor-quick:
-      image: ghcr.io/felix-zenk/tor-quick:latest
-      container_name: tor-quick
-      environment:
-        FORWARD_ADDR: 80:webserver:8000
+    image: ghcr.io/felix-zenk/tor-quick:latest
+    container_name: tor-quick
+    environment:
+      FORWARD_ADDR: 80:webserver:8000
 ```
 
 To use a specific onion address instead of generating a random one,
@@ -44,12 +44,12 @@ services:
     ports:
       - 8000:8000
   tor-quick:
-      image: ghcr.io/felix-zenk/tor-quick:latest
-      container_name: tor-quick
-      environment:
-        FORWARD_ADDR: 80:webserver:8000
-      volumes:
-        - ./hidden_service:/var/lib/tor/hidden_service
+    image: ghcr.io/felix-zenk/tor-quick:latest
+    container_name: tor-quick
+    environment:
+      FORWARD_ADDR: 80:webserver:8000
+    volumes:
+      - ./hidden_service:/var/lib/tor/hidden_service
 ```
 
 If you want to use a random onion address, but still want it to persist between restarts,
@@ -61,12 +61,12 @@ services:
     image: crccheck/hello-world
     container_name: hello-world-webserver
   tor-quick:
-      image: ghcr.io/felix-zenk/tor-quick:latest
-      container_name: tor-quick
-      environment:
-        FORWARD_ADDR: 80:webserver:8000
-      volumes:
-        - hidden_service:/var/lib/tor/hidden_service
+    image: ghcr.io/felix-zenk/tor-quick:latest
+    container_name: tor-quick
+    environment:
+      FORWARD_ADDR: 80:webserver:8000
+    volumes:
+      - hidden_service:/var/lib/tor/hidden_service
 
 volumes:
   hidden_service:
@@ -91,7 +91,7 @@ services:
 ```
 
 > Keep in mind, that [not every listening port can be used](https://support.torproject.org/relay-operators/default-exit-ports/)
-> and relay operators may constrain the useable ports further.
+> and relay operators may constrain the usable ports further.
 
 To view the active forwards:
 
