@@ -75,7 +75,7 @@ volumes:
 The `.onion` address of your hidden service will be printed to the logs:
 
 ```shell
-$ docker logs tor-quick | grep "Hidden service address"
+$ docker logs tor-quick | grep "Onion Service address"
 ```
 
 Multiple forwards can be set up by specifying numbered `FORWARD_ADDR` environment variables:
