@@ -10,6 +10,7 @@ if ! env | grep -qE '^FORWARD_ADDR\d*='; then
 fi
 
 mkdir -p "${HIDDEN_SERVICE_DIR}" "${DATA_DIR}" "${LOG_DIR}"
+touch "${LOG_DIR}/notices.log"
 chmod -R 700 "${HIDDEN_SERVICE_DIR}"
 chown -R tor:nogroup "${DATA_DIR}" "${LOG_DIR}/notices.log"
 
@@ -58,6 +59,14 @@ Define a valid port number in the format PORT:FWD_ADDR or PORT:FWD_ADDR:FWD_PORT
   FORWARD_ADDRESS=$(echo "$value" | cut -d: -f2-)
   if ! echo "$FORWARD_ADDRESS" | grep -qE ':\d+$'; then
     FORWARD_ADDRESS="${FORWARD_ADDRESS}:${PORT}"
+  fi
+
+  # If environment variable CHECK_DESTINATION is set, check if the destination is reachable
+  if [ -n "$CHECK_DESTINATION" ]; then
+    if ! nc -z -w 1 "$(echo "$FORWARD_ADDRESS" | cut -d: -f1)" "$(echo "$FORWARD_ADDRESS" | cut -d: -f2)"; then
+      echo "Destination is unreachable: $FORWARD_ADDRESS (in $varname)"
+      exit 1
+    fi
   fi
 
   # Add the service to the list to be displayed later
