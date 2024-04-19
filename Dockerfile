@@ -1,4 +1,4 @@
-FROM alpine:latest
+FROM --platform=$BUILDPLATFORM alpine:latest
 
 RUN apk update
 RUN apk upgrade
