@@ -14,16 +14,28 @@ chown "${USER:-$(whoami)}": "${DATA_DIR}" "${HIDDEN_SERVICE_DIR}"
 chmod -R 700 "${DATA_DIR}" "${HIDDEN_SERVICE_DIR}"
 
 services=""  # List of services to be displayed at the end
+usedports=""  # List of ports that are already in use
 
 TORRC="Log notice file ${LOG_DIR}/notices.log
 DataDirectory ${DATA_DIR}
 HiddenServiceDir ${HIDDEN_SERVICE_DIR}
 "
 
+## Possible environment variable formats:
+# FORWARD_ADDR=PORT:FWD_ADDR          --> *.onion:PORT -> FWD_ADDR:PORT
+# FORWARD_ADDR=PORT:FWD_ADDR:FWD_PORT --> *.onion:PORT -> FWD_ADDR:FWD_PORT
+# FORWARD_ADDR=FWD_ADDR:FWD_PORT      --> *.onion:80 -> FWD_ADDR:FWD_PORT
+
 # Get all environment variables that match FORWARD_ADDR(+number)
 for varname in $(env | grep -E '^FORWARD_ADDR\d*=' | sed 's/=.*//'); do
   # Get the value of the environment variable
   value="$(eval echo \$$varname)"
+
+  # If value matches the legacy format prepend 80: to the value
+  if echo "$value" | grep -qE '^[[:alnum:].]+:\d+$'; then
+    echo "Legacy format detected: Please change $value (in $varname) to 80:$value"
+    value="80:$value"
+  fi
 
   # Parse the listening port
   PORT=$(echo "$value" | cut -d: -f1)
@@ -32,6 +44,15 @@ for varname in $(env | grep -E '^FORWARD_ADDR\d*=' | sed 's/=.*//'); do
 Define a valid port number in the format PORT:FWD_ADDR or PORT:FWD_ADDR:FWD_PORT"
     exit 1
   fi
+
+  # Check if the port is already in use
+  for usedport in $usedports; do
+    if [ "$PORT" = "$usedport" ]; then
+      echo "Port $PORT was already defined in another environment variable! Can not be used in $varname"
+      exit 1
+    fi
+  done
+  usedports="${usedports} $PORT"
 
   # Parse the forward address and add the same port if only the listening port is defined
   FORWARD_ADDRESS=$(echo "$value" | cut -d: -f2-)
@@ -49,10 +70,12 @@ done
 
 # Generate and check the torrc configuration
 echo "$TORRC" > /etc/tor/torrc
-if ! tor --verify-config; then
+if ! tor --verify-config > /dev/null 2>&1; then
   echo "Invalid torrc configuration"
   exit 1
 fi
+
+# Start tor
 tor &
 
 # Wait for the hidden service to be generated if it doesn't exist
