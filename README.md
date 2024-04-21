@@ -1,7 +1,11 @@
 TOR-quick
 ===
 
+[![Create and publish Docker image](https://github.com/felix-zenk/tor-quick/actions/workflows/publish.yml/badge.svg)](https://github.com/felix-zenk/tor-quick/actions/workflows/publish.yml)
+
 `tor-quick` is a docker container for setting up an onion service and forwarding traffic to specified addresses.
+
+---
 
 A minimal compose stack could look like this:
 
