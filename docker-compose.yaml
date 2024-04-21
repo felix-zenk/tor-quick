@@ -11,7 +11,7 @@ services:
       FORWARD_ADDR1: 80:web-server:8000
       ## Uncomment if the forward destinations should be tested to be reachable
       # CHECK_DESTINATION: true
-      ## Install and use vanguards (takes more time the first time the container is started)
+      ## Use vanguards
       # ENABLE_VANGUARDS: true
       ## Any extra options to write to the torrc file
       # TORRC_EXTRA: |
@@ -26,6 +26,7 @@ services:
     # volumes:
       # - ./hidden_service:/var/lib/tor/hidden_service
       # - hidden-service:/var/lib/tor/hidden_service
+    restart: unless-stopped
 
 # volumes:
   # hidden-service:

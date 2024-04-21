@@ -13,12 +13,11 @@ A minimal compose stack could look like this:
 services:
   tor-quick:
     image: ghcr.io/felix-zenk/tor-quick:latest
-    container_name: tor-quick
     environment:
-      FORWARD_ADDR: 80:127.0.0.1:8000
+      FORWARD_ADDR: 80:172.17.0.1:8000
 ```
 
-This will create an onion service that forwards traffic on the listening port 80 to 127.0.0.1:8000.  
+This will create an onion service that forwards traffic on the listening port 80 to 172.17.0.1:8000.  
 Have a look at [docker-compose.yaml](docker-compose.yaml) for a more complete example.  
 
 Possible formats for `FORWARD_ADDR` are:
@@ -62,8 +61,6 @@ services:
   webserver:
     image: crccheck/hello-world
     container_name: hello-world-webserver
-    ports:
-      - 8000:8000
   tor-quick:
     image: ghcr.io/felix-zenk/tor-quick:latest
     container_name: tor-quick
@@ -71,26 +68,10 @@ services:
       FORWARD_ADDR: 80:webserver:8000
     volumes:
       - ./hidden_service:/var/lib/tor/hidden_service
-```
-
-If you want to use a random onion address, but still want it to persist between restarts,
-you can use an empty directory or named volume:
-
-```yaml
-services:
-  webserver:
-    image: crccheck/hello-world
-    container_name: hello-world-webserver
-  tor-quick:
-    image: ghcr.io/felix-zenk/tor-quick:latest
-    container_name: tor-quick
-    environment:
-      FORWARD_ADDR: 80:webserver:8000
-    volumes:
-      - hidden_service:/var/lib/tor/hidden_service
-
-volumes:
-  hidden_service:
+      ## Or use a named volume to let tor generate a random address on first start and persist it.
+      # - hidden-service:/var/lib/tor/hidden_service
+# volumes:
+  # hidden-service:
 ```
 
 The `.onion` address of your onion service will be printed to the logs:
@@ -103,12 +84,27 @@ Multiple forwards can be set up by specifying numbered `FORWARD_ADDR` environmen
 
 ```yaml
 services:
+  http-reverse-proxy:
+    ...
+  ssh-server:
+    ...
+  irc-server:
+    ...
+
   tor-quick:
     image: ghcr.io/felix-zenk/tor-quick:latest
     container_name: tor-quick
     environment:
-      FORWARD_ADDR1: 80:webserver:8000
-      FORWARD_ADDR2: 22:sshserver:22
+      FORWARD_ADDR1: 80:http-reverse-proxy
+      FORWARD_ADDR2: 443:http-reverse-proxy
+      FORWARD_ADDR3: 22:ssh-server
+      FORWARD_ADDR4: 6667:irc-server
+  volumes:
+    - hidden-service:/var/lib/tor/hidden_service
+  restart: unless-stopped
+
+volumes:
+  hidden-service:
 ```
 
 > Keep in mind, that [not every listening port can be used](https://support.torproject.org/relay-operators/default-exit-ports/)
