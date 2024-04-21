@@ -49,7 +49,7 @@ Define a valid port number in the format PORT:FWD_ADDR or PORT:FWD_ADDR:FWD_PORT
   for used_port in $USED_PORTS; do
     if [ "$PORT" = "$used_port" ]; then
       echo "[ERROR]: Port $PORT was already defined in another environment variable! Can not be used in $varname"
-    exit 1
+      exit 1
     fi
   done
   USED_PORTS="${USED_PORTS} $PORT"

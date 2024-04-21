@@ -23,11 +23,11 @@ Have a look at [docker-compose.yaml](docker-compose.yaml) for a more complete ex
 
 Possible formats for `FORWARD_ADDR` are:
 
-| Format                 | Listening Port | Forwarded to        |
-|------------------------|----------------|---------------------|
-| PORT:FWD_ADDR          | *.onion:PORT   | FWD_ADDR:PORT       |
-| PORT:FWD_ADDR:FWD_PORT | *.onion:PORT   | FWD_ADDR:FWD_PORT   |
-| *FWD_ADDR:FWD_PORT*    | *\*.onion:80*  | *FWD_ADDR:FWD_PORT* |
+| Format                 | Listening address | Destination address |
+|------------------------|-------------------|---------------------|
+| PORT:FWD_HOST          | *.onion:PORT      | FWD_HOST:PORT       |
+| PORT:FWD_HOST:FWD_PORT | *.onion:PORT      | FWD_HOST:FWD_PORT   |
+| *FWD_HOST:FWD_PORT*    | *\*.onion:80*     | *FWD_HOST:FWD_PORT* |
 
 
 Additional environment variables can be set to configure the onion service further:
