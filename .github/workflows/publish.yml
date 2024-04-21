@@ -58,6 +58,4 @@ jobs:
             linux/arm64/v7,
             linux/arm64/v8,
             linux/386,
-            linux/ppc64le,
-            linux/s390x
-
+            linux/ppc64le
