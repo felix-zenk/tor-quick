@@ -10,18 +10,11 @@ if ! env | grep -qE '^FORWARD_ADDR\d*='; then
 fi
 
 mkdir -p "${HIDDEN_SERVICE_DIR}" "${DATA_DIR}" "${LOG_DIR}"
-touch "${LOG_DIR}/notices.log"
+if ! [ -f "${LOG_DIR}" ]; then
+  touch "${LOG_DIR}/notices.log"
+fi
 chmod -R 700 "${HIDDEN_SERVICE_DIR}"
 chown -R tor:nogroup "${DATA_DIR}" "${LOG_DIR}/notices.log"
-
-if [ -n "$ENABLE_VANGUARDS" ]; then
-  if [ ! -d "/opt/vanguards" ]; then
-    echo "[INFO]: Installing vanguards, this may take a while..."
-    apk add -q git python3 py3-stem
-    git clone -q https://github.com/mikeperry-tor/vanguards.git /opt/vanguards
-    chown -R tor:nogroup /opt/vanguards
-  fi
-fi
 
 
 HIDDEN_SERVICES=""  # List of services to be displayed at the end
@@ -32,11 +25,6 @@ DataDirectory ${DATA_DIR}
 
 HiddenServiceDir ${HIDDEN_SERVICE_DIR}
 "
-
-## Possible environment variable formats:
-# FORWARD_ADDR=PORT:FWD_ADDR          --> *.onion:PORT -> FWD_ADDR:PORT
-# FORWARD_ADDR=PORT:FWD_ADDR:FWD_PORT --> *.onion:PORT -> FWD_ADDR:FWD_PORT
-# FORWARD_ADDR=FWD_ADDR:FWD_PORT      --> *.onion:80 -> FWD_ADDR:FWD_PORT
 
 # Get all environment variables that match FORWARD_ADDR(+number)
 for varname in $(env | grep -E '^FORWARD_ADDR\d*=' | sed 's/=.*//'); do
@@ -50,7 +38,7 @@ for varname in $(env | grep -E '^FORWARD_ADDR\d*=' | sed 's/=.*//'); do
   fi
 
   # Parse the listening port
-  PORT=$(echo "$value" | cut -d: -f1)
+  PORT=$(echo "$value" | cut -d ':' -f1)
   if ! echo "$PORT" | grep -qE '^\d+$'; then
     echo "[ERROR]: Invalid port number: $PORT (in $varname)
 Define a valid port number in the format PORT:FWD_ADDR or PORT:FWD_ADDR:FWD_PORT"
@@ -58,8 +46,8 @@ Define a valid port number in the format PORT:FWD_ADDR or PORT:FWD_ADDR:FWD_PORT
   fi
 
   # Check if the port is already in use
-  for usedport in $USED_PORTS; do
-    if [ "$PORT" = "$usedport" ]; then
+  for used_port in $USED_PORTS; do
+    if [ "$PORT" = "$used_port" ]; then
       echo "[ERROR]: Port $PORT was already defined in another environment variable! Can not be used in $varname"
     exit 1
     fi
@@ -67,14 +55,14 @@ Define a valid port number in the format PORT:FWD_ADDR or PORT:FWD_ADDR:FWD_PORT
   USED_PORTS="${USED_PORTS} $PORT"
 
   # Parse the forward address and add the same port if only the listening port is defined
-  FORWARD_ADDRESS=$(echo "$value" | cut -d: -f2-)
+  FORWARD_ADDRESS=$(echo "$value" | cut -d ':' -f2-)
   if ! echo "$FORWARD_ADDRESS" | grep -qE ':\d+$'; then
     FORWARD_ADDRESS="${FORWARD_ADDRESS}:${PORT}"
   fi
 
   # If environment variable CHECK_DESTINATION is set, check if the destination is reachable
   if [ -n "$CHECK_DESTINATION" ]; then
-    if ! nc -z -w 1 "$(echo "$FORWARD_ADDRESS" | cut -d: -f1)" "$(echo "$FORWARD_ADDRESS" | cut -d: -f2)"; then
+    if ! nc -z -w 1 "$(echo "$FORWARD_ADDRESS" | cut -d ':' -f1)" "$(echo "$FORWARD_ADDRESS" | cut -d ':' -f2)"; then
       echo "[ERROR]: Destination is unreachable: $FORWARD_ADDRESS (in $varname)"
       exit 1
     fi
@@ -89,29 +77,39 @@ Define a valid port number in the format PORT:FWD_ADDR or PORT:FWD_ADDR:FWD_PORT
 done
 
 # Generate and check the torrc configuration
-if [ -n "$ENABLE_VANGUARDS" ]; then
-  TORRC="${TORRC}
-ControlPort 9051
-CookieAuthentication 1
-"
-fi
 if [ -n "$TORRC_EXTRA" ]; then
   TORRC="${TORRC}
 ${TORRC_EXTRA}
 "
+fi
+if [ -n "$ENABLE_VANGUARDS" ]; then
+  # If ControlPort is not yet present in TORRC, then enable the default control port
+  if ! echo "$TORRC" | grep -qE '^ControlPort \d+'; then
+    TORRC="${TORRC}
+ControlPort 9051
+"
+  fi
+
+  # If there is no verification option enabled, then enable CookieAuthentication
+  if ! echo "${TORRC}" | grep -qE '^CookieAuthentication 1|HashedControlPassword \d+:\w+'; then
+    TORRC="${TORRC}
+CookieAuthentication 1
+"
+  fi
 fi
 echo "$TORRC" > /etc/tor/torrc
 if ! su -s /bin/sh -c '/usr/bin/tor --verify-config > /dev/null 2>&1' tor; then
   echo "[ERROR]: Invalid torrc configuration"
   exit 1
 fi
+echo "[INFO]: torrc is valid"
 
 # Start tor as a background process as the tor user
 su -s /bin/sh -c '/usr/bin/tor' tor &
 
 # If enabled, start vanguards as a background process as the tor user
 if [ -n "$ENABLE_VANGUARDS" ]; then
-  CONTROL_PORT=$(grep -E '^ControlPort (\d+)' /etc/tor/torrc | tail -n1 | cut -d ' ' -f2)
+  CONTROL_PORT=$(grep -E '^ControlPort \d+' /etc/tor/torrc | tail -n1 | cut -d ' ' -f2)
   until [ -f "${DATA_DIR}/cached-microdesc-consensus" ]; do
     sleep .1
   done
@@ -127,8 +125,8 @@ done
 ONION_SERVICE_ADDRESS="$(cat "${HIDDEN_SERVICE_DIR}/hostname")"
 echo "[INFO]: Onion Service address: $ONION_SERVICE_ADDRESS"
 for service in $HIDDEN_SERVICES; do
-  PORT=$(echo "$service" | cut -d~ -f1)
-  FORWARD_ADDRESS=$(echo "$service" | cut -d~ -f2)
+  PORT=$(echo "$service" | cut -d '~' -f1)
+  FORWARD_ADDRESS=$(echo "$service" | cut -d '~' -f2)
   echo "[INFO]: Hidden service: $ONION_SERVICE_ADDRESS:$PORT -> $FORWARD_ADDRESS"
 done
 

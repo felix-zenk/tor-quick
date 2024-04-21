@@ -17,15 +17,24 @@ services:
 This will create an onion service that forwards traffic on the listening port 80 to 127.0.0.1:8000.  
 Have a look at [docker-compose.yaml](docker-compose.yaml) for a more complete example.  
 
+Possible formats for `FORWARD_ADDR` are:
+
+| Format                 | Listening Port | Forwarded to        |
+|------------------------|----------------|---------------------|
+| PORT:FWD_ADDR          | *.onion:PORT   | FWD_ADDR:PORT       |
+| PORT:FWD_ADDR:FWD_PORT | *.onion:PORT   | FWD_ADDR:FWD_PORT   |
+| *FWD_ADDR:FWD_PORT*    | *\*.onion:80*  | *FWD_ADDR:FWD_PORT* |
+
+
 Additional environment variables can be set to configure the onion service further:
 
 - `CHECK_DESTINATION`: If set to `true`, the destination addresses will be checked for reachability before starting the onion service.
   Helps to avoid misconfigurations.
-- `ENABLE_VANGUARDS`: If set to `true`, the [Vanguards](https://github.com/mikeperry-tor/vanguards) extension will be installed and enabled.
+- `ENABLE_VANGUARDS`: If set to `true`, the [Vanguards](https://github.com/mikeperry-tor/vanguards) addon will be enabled.
 - `TORRC_EXTRA`: Additional configuration to append to the `torrc` file.
 
 You can also combine `tor-quick` with a server, that should be accessible as an onion service,
-in the compose stack:
+in the compose stack and reference it by its service name:
 
 ```yaml
 services:
