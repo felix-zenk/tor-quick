@@ -77,7 +77,7 @@ services:
 The `.onion` address of your onion service will be printed to the logs:
 
 ```shell
-$ docker logs tor-quick | grep "Onion Service address"
+$ docker logs tor-quick | grep "Onion Service address:"
 ```
 
 Multiple forwards can be set up by specifying numbered `FORWARD_ADDR` environment variables:
@@ -110,9 +110,14 @@ volumes:
 > Keep in mind, that [not every listening port can be used](https://support.torproject.org/relay-operators/default-exit-ports/)
 > and relay operators may constrain the usable ports further.
 
-To view the active forwards:
+To view just the active forwards:
 
 ```shell
-$ docker logs tor-quick | grep "Hidden service"
+$ docker logs tor-quick | grep "Hidden service:"
 ```
 
+or get a combined output:
+
+```shell
+$ docker logs tor-quick | grep ".onion"
+```
