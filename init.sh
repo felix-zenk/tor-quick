@@ -1,4 +1,4 @@
-#!/usr/bin/env sh
+#!/bin/sh
 
 HIDDEN_SERVICE_DIR=$(realpath "${HIDDEN_SERVICE_DIR:-/var/lib/tor/hidden_service}")
 DATA_DIR=$(realpath "${DATA_DIR:-/var/lib/tor}")
@@ -37,11 +37,18 @@ for varname in $(env | grep -E '^FORWARD_ADDR\d*=' | sed 's/=.*//'); do
     value="80:$value"
   fi
 
+  # Check format
+  if ! echo "$value" | grep -qE '^\d+:[[:alnum:].]+(:\d+)?$'; then
+    echo "[ERROR]: Invalid format: $value (in $varname)
+Define the port number and the forward host in the format PORT:FWD_HOST or PORT:FWD_HOST:FWD_PORT"
+    exit 1
+  fi
+
   # Parse the listening port
   PORT=$(echo "$value" | cut -d ':' -f1)
   if ! echo "$PORT" | grep -qE '^\d+$'; then
     echo "[ERROR]: Invalid port number: $PORT (in $varname)
-Define a valid port number in the format PORT:FWD_ADDR or PORT:FWD_ADDR:FWD_PORT"
+Define a valid port number in the format PORT:FWD_HOST or PORT:FWD_HOST:FWD_PORT"
     exit 1
   fi
 
