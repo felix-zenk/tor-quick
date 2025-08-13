@@ -1,0 +1,60 @@
+name: Check for updates
+
+permissions:
+  contents: write
+
+on:
+  schedule:
+    - cron: "15 21 * * *"
+  workflow_dispatch:
+
+jobs:
+  check-tor:
+    runs-on: ubuntu-latest
+    container:
+      image: ghcr.io/felix-zenk/tor-quick:latest
+      env:
+        FORWARD_ADDR: 1234:127.0.0.1:1234
+    outputs:
+      update_available: ${{ steps.update.outputs.update_available }}
+    steps:
+      - name: Run update check
+        id: update
+        run: |
+          if apk --no-cache list --upgradable | tail -n +3 | grep -q -E '^tor-'; then
+            echo "update_available=true" >> $GITHUB_OUTPUT
+          else
+            echo "update_available=false" >> $GITHUB_OUTPUT
+          fi
+
+  create-tag:
+    runs-on: ubuntu-latest
+    needs:
+      - check-tor
+    if: needs.check-tor.outputs.update_available == 'true'
+    steps:
+      - uses: actions/checkout@v4
+      - name: Create tag
+        working-directory: ${{ github.workspace }}
+        id: tag
+        run: |
+          git fetch --tags
+          LATEST_TAG=$(git tag --list 'v*.*.*' | sort -V | tail -n 1)
+          if [[ -z "$LATEST_TAG" ]]; then
+            LATEST_TAG="v0.0.0"
+          fi
+          echo "Latest tag: $LATEST_TAG"
+          PATCH=$(echo "$LATEST_TAG" | cut -d '.' -f 3)
+          MAJOR_MINOR_TAG=$(echo "$LATEST_TAG" | cut -d '.' -f 1-2)
+          TAG="$MAJOR_MINOR_TAG.$(( $PATCH + 1 ))"
+          echo "New tag: $TAG"
+          git tag "$TAG"
+          echo "tag=$TAG" >> $GITHUB_OUTPUT
+      - name: Push tag
+        working-directory: ${{ github.workspace }}
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          git config user.name "${{ github.actor }}"
+          git config user.email "${{ github.actor }}@users.noreply.github.com"
+          git push origin "${{ steps.tag.outputs.tag }}"
