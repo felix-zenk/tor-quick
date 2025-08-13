@@ -26,7 +26,6 @@ Possible formats for `FORWARD_ADDR` are:
 |------------------------|-------------------|---------------------|
 | PORT:FWD_HOST          | *.onion:PORT      | FWD_HOST:PORT       |
 | PORT:FWD_HOST:FWD_PORT | *.onion:PORT      | FWD_HOST:FWD_PORT   |
-| *FWD_HOST:FWD_PORT*    | *\*.onion:80*     | *FWD_HOST:FWD_PORT* |
 
 
 Additional environment variables can be set to configure the onion service further:
@@ -35,6 +34,10 @@ Additional environment variables can be set to configure the onion service furth
   Helps to avoid misconfigurations.
 - `ENABLE_VANGUARDS`: If set to `true`, the [Vanguards](https://github.com/mikeperry-tor/vanguards) addon will be enabled.
 - `TORRC_EXTRA`: Additional configuration to append to the `torrc` file.
+- `TORRC_INCLUDE`: Additional configuration files to include in the `torrc` file. Space separated list of file paths.
+- `AUTO_UPDATE_OS`: Whether to automatically update all packages on container startup
+- `AUTO_UPDATE_TOR`: Whether to automatically update the tor package on container startup
+- `AUTO_UPDATE_VANGUARDS`: Whether to automatically pull the newest vanguards version on container startup
 
 You can also combine `tor-quick` with a server, that should be accessible as an onion service,
 in the compose stack and reference it by its service name:
@@ -67,7 +70,7 @@ services:
     environment:
       FORWARD_ADDR: 80:webserver:8000
     volumes:
-      - ./hidden_service:/var/lib/tor/hidden_service
+      - "./hidden_service:/var/lib/tor/hidden_service"
       ## Or use a named volume to let tor generate a random address on first start and persist it.
       # - hidden-service:/var/lib/tor/hidden_service
 # volumes:
@@ -100,14 +103,14 @@ services:
       FORWARD_ADDR3: 22:ssh-server
       FORWARD_ADDR4: 6667:irc-server
   volumes:
-    - hidden-service:/var/lib/tor/hidden_service
+    - "hidden-service:/var/lib/tor/hidden_service"
   restart: unless-stopped
 
 volumes:
   hidden-service:
 ```
 
-> Keep in mind, that [not every listening port can be used](https://support.torproject.org/relay-operators/default-exit-ports/)
+> Keep in mind that [not every listening port can be used](https://support.torproject.org/relay-operators/default-exit-ports/)
 > and relay operators may constrain the usable ports further.
 
 To view just the active forwards:
