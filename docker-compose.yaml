@@ -31,7 +31,7 @@ services:
         # HardwareAccel 1
         # %include /volume/with/extra/*.conf
       ## Additional volumes with configs that will be included in the torrc file
-      # TORRC_INCLUDES: /torrc.d /data/torrc.d
+      # TORRC_INCLUDE: /torrc.d /data/torrc.d
 
     ## You probably want to uncomment this when using CHECK_DESTINATION
     # depends_on:
@@ -39,8 +39,8 @@ services:
 
     ## If you want to use a set onion address, you can mount a volume with the private_key and hostname files
     # volumes:
-      # - ./hidden_service:/var/lib/tor/hidden_service # Bind a local directory
-      # - hidden-service:/var/lib/tor/hidden_service # Use a named volume
+      # - "./hidden_service:/var/lib/tor/hidden_service" # Bind a local directory
+      # - "hidden-service:/var/lib/tor/hidden_service" # Use a named volume
     restart: unless-stopped
 
 # volumes:

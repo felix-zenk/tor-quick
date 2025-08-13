@@ -103,6 +103,13 @@ if [ -n "$TORRC_EXTRA" ]; then
   TORRC="${TORRC}
 ${TORRC_EXTRA}
 "
+if [ -n "$TORRC_INCLUDE" ]; then
+    for filename in $TORRC_INCLUDE; do
+        TORRC="${TORRC}
+%include $filename
+"
+    done
+fi
 fi
 if [ -n "$ENABLE_VANGUARDS" ]; then
   # If ControlPort is not yet present in TORRC, then enable the default control port
