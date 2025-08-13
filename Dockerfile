@@ -1,7 +1,6 @@
 FROM --platform=$TARGETPLATFORM alpine:latest
 
-RUN apk update
-RUN apk upgrade
+RUN apk --no-cache upgrade
 RUN apk add tor git python3 py3-stem
 RUN git clone -q https://github.com/mikeperry-tor/vanguards.git /opt/vanguards
 RUN chown -R tor:nogroup /opt/vanguards
