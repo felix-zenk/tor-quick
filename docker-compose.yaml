@@ -1,22 +1,37 @@
+name: tor-quick
 services:
   web-server:
     image: crccheck/hello-world
     container_name: hello-world-webserver
-    ports:
-      - 8000:8000
+    ## Exposing ports is not needed if the proxied service and the tor-quick container run in the same stack
+    ## as configured in this example
+    # ports:
+      # - "8000:8000"
+
   tor-quick:
     image: ghcr.io/felix-zenk/tor-quick:latest
     container_name: tor-quick
+    build: .
     environment:
       FORWARD_ADDR1: 80:web-server:8000
       ## Uncomment if the forward destinations should be tested to be reachable
       # CHECK_DESTINATION: true
+      ### Security options
       ## Use vanguards
       # ENABLE_VANGUARDS: true
+      ## Enable auto updates of the tor package on container start
+      # AUTO_UPDATE_TOR: false
+      ## Enable auto updates of the vanguards service on container start
+      # AUTO_UPDATE_VANGUARDS: false
+      ## Enable auto OS updates by switching the alpine apk branch to latest-stable and upgrading
+      # AUTO_UPDATE_OS: false
+      ### Extendability
       ## Any extra options to write to the torrc file
       # TORRC_EXTRA: |
         # HardwareAccel 1
         # %include /volume/with/extra/*.conf
+      ## Additional volumes with configs that will be included in the torrc file
+      # TORRC_INCLUDES: /torrc.d /data/torrc.d
 
     ## You probably want to uncomment this when using CHECK_DESTINATION
     # depends_on:
@@ -24,8 +39,8 @@ services:
 
     ## If you want to use a set onion address, you can mount a volume with the private_key and hostname files
     # volumes:
-      # - ./hidden_service:/var/lib/tor/hidden_service
-      # - hidden-service:/var/lib/tor/hidden_service
+      # - ./hidden_service:/var/lib/tor/hidden_service # Bind a local directory
+      # - hidden-service:/var/lib/tor/hidden_service # Use a named volume
     restart: unless-stopped
 
 # volumes:

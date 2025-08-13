@@ -4,6 +4,21 @@ HIDDEN_SERVICE_DIR=$(realpath "${HIDDEN_SERVICE_DIR:-/var/lib/tor/hidden_service
 DATA_DIR=$(realpath "${DATA_DIR:-/var/lib/tor}")
 LOG_DIR=$(realpath "${LOG_DIR:-/var/log/tor}")
 
+if [ -n "$AUTO_UPDATE_OS" ] && [ "$AUTO_UPDATE_OS" != "false" ]; then
+  if grep -qE '/v\d+\.\d+/' /etc/apk/repositories; then
+    sed -r -i 's|/v\d+\.\d+/|/latest-stable/|' /etc/apk/repositories
+  fi
+  apk --no-cache upgrade
+fi
+
+if [ -n "$AUTO_UPDATE_TOR" ] && [ "$AUTO_UPDATE_TOR" != "false" ]; then
+  apk --no-cache add tor
+fi
+
+if [ -n "$AUTO_UPDATE_VANGUARDS" ] && [ "$AUTO_UPDATE_VANGUARDS" != "false" ]; then
+    cd /opt/vanguards && git pull || cd /
+fi
+
 if ! env | grep -qE '^FORWARD_ADDR\d*='; then
   echo "[ERROR]: No forwards found! Set FORWARD_ADDR or any FORWARD_ADDRx where x is a number."
   exit 1
@@ -68,7 +83,7 @@ Define a valid port number in the format PORT:FWD_HOST or PORT:FWD_HOST:FWD_PORT
   fi
 
   # If environment variable CHECK_DESTINATION is set, check if the destination is reachable
-  if [ -n "$CHECK_DESTINATION" ]; then
+  if [ -n "$CHECK_DESTINATION" ] && [ "$CHECK_DESTINATION" != "false" ]; then
     if ! nc -z -w 1 "$(echo "$FORWARD_ADDRESS" | cut -d ':' -f1)" "$(echo "$FORWARD_ADDRESS" | cut -d ':' -f2)"; then
       echo "[ERROR]: Destination is unreachable: $FORWARD_ADDRESS (in $varname)"
       exit 1

@@ -11,10 +11,7 @@ on:
 jobs:
   check-tor:
     runs-on: ubuntu-latest
-    container:
-      image: ghcr.io/felix-zenk/tor-quick:latest
-      env:
-        FORWARD_ADDR: 1234:127.0.0.1:1234
+    container: ghcr.io/felix-zenk/tor-quick:latest
     outputs:
       update_available: ${{ steps.update.outputs.update_available }}
     steps:
