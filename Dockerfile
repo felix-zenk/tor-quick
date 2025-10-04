@@ -6,10 +6,8 @@ RUN git clone -q https://github.com/mikeperry-tor/vanguards.git /opt/vanguards
 RUN chown -R tor:nogroup /opt/vanguards
 
 COPY healthcheck.sh /healthcheck.sh
-RUN chmod +x /healthcheck.sh
-
 COPY init.sh /init.sh
-RUN chmod +x /init.sh
+RUN chmod +x /healthcheck.sh /init.sh
 
 CMD ["/init.sh"]
 
